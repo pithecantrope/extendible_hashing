@@ -28,8 +28,8 @@ is_equal_str(const void* key1, const void* key2, size_t key_size) {
 
 int
 main(int argc, char* argv[]) {
-    uint32_t bucket_capacity;
-    if (2 != argc || 1 != sscanf(argv[1], "%" SCNu32, &bucket_capacity)) {
+    uint16_t bucket_capacity;
+    if (2 != argc || 1 != sscanf(argv[1], "%" SCNu16, &bucket_capacity)) {
         fprintf(stderr, "Usage: %s <bucket_capacity>\n", *argv);
         return EXIT_FAILURE;
     }
@@ -42,16 +42,13 @@ main(int argc, char* argv[]) {
     }
 
     char word[64];
-    size_t count;
-    eh_hashtable_t* table = eh_create(bucket_capacity, sizeof(word), sizeof(count), hash_fnv1a, is_equal_str);
+    eh_hashtable_t* table = eh_create(bucket_capacity, sizeof(word), sizeof(size_t), hash_fnv1a, is_equal_str);
     if (NULL == table) {
         fprintf(stderr, "Could not create extendible hashing hashtable\n");
         goto free_table;
     }
 
-    while (1 == fscanf(file, "%s\n", word)) {
-        // printf("%s\n", word);
-    }
+    while (1 == fscanf(file, "%s\n", word)) {}
 
     eh_destroy(table);
     fclose(file);
