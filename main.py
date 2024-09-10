@@ -1,7 +1,4 @@
-from re import compile
+from collections import Counter
 
-WORD = compile(r"\w+'?\w*")
-
-with open("res/shakespeare.txt") as input, open("res/data.txt", "w") as output:
-    output.writelines(list(map(lambda s: f"{s.lower()}\n", WORD.findall(input.read()))))
-    
+with open("res/data.txt") as f:
+    print(len([item for item, count in Counter(f.readlines()).items() if count >= 1024]))

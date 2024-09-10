@@ -38,25 +38,30 @@ main(int argc, char* argv[]) {
     FILE* file = fopen(path, "rt");
     if (NULL == file) {
         fprintf(stderr, "Could not open %s for reading\n", path);
-        goto free_file;
+        return EXIT_FAILURE;
     }
 
     char word[64];
     eh_hashtable_t* table = eh_create(bucket_capacity, sizeof(word), sizeof(size_t), hash_fnv1a, is_equal_str);
-    if (NULL == table) {
-        fprintf(stderr, "Could not create extendible hashing hashtable\n");
-        goto free_table;
+    while (1 == fscanf(file, "%s\n", word)) {
+        void* value = eh_lookup(table, word);
+        if (NULL == value) {
+            eh_insert(table, word, &(size_t){1});
+        } else {
+            ++*(size_t*)value;
+        }
     }
 
-    while (1 == fscanf(file, "%s\n", word)) {}
+    size_t count = 0;
+    void *key, *val;
+    for (eh_iterator_t iterator = eh_iter(table); eh_next(&iterator, &key, &val);) {
+        if (*(size_t*)val >= 1024) {
+            ++count;
+        }
+    }
+    printf("%zu words with >= 1024 repetitions\n", count);
 
     eh_destroy(table);
     fclose(file);
     return EXIT_SUCCESS;
-
-free_table:
-    eh_destroy(table);
-free_file:
-    fclose(file);
-    return EXIT_FAILURE;
 }
