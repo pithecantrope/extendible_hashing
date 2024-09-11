@@ -61,7 +61,21 @@ main(int argc, char* argv[]) {
     }
     printf("%zu words with >= 1024 repetitions\n", count);
 
-    eh_destroy(table);
+    // eh_hashtable_t* new_table = eh_create(bucket_capacity, sizeof(word), sizeof(size_t), hash_fnv1a, is_equal_str);
+    // eh_insert(new_table, "Hello", &(size_t){1});
+    // eh_insert(new_table, "World", &(size_t){2});
+    // eh_insert(new_table, "Egor", &(size_t){3});
+    // eh_insert(new_table, "Brat", &(size_t){4});
+    // eh_insert(new_table, "Tima", &(size_t){5});
+
+    // eh_erase(new_table, "Hello");
+    // eh_erase(new_table, "World");
+    // eh_erase(new_table, "Egor");
+    // eh_erase(new_table, "Brat");
+    // eh_erase(new_table, "Tima");
+
+    // eh_destroy(new_table);
+    // eh_destroy(table);
     fclose(file);
     return EXIT_SUCCESS;
 }

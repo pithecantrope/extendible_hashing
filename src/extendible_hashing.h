@@ -24,6 +24,6 @@ void eh_destroy(eh_hashtable_t* table);
 [[nodiscard]] bool eh_next(eh_iterator_t* iterator, void** key, void** value);
 void eh_insert(eh_hashtable_t* table, const void* key, const void* value);
 [[nodiscard]] void* eh_lookup(const eh_hashtable_t* table, const void* key);
-// TODO: erase and clear
+void eh_erase(eh_hashtable_t* table, const void* key);
 
 #endif // EXTENDIBLE_HASHING_H
