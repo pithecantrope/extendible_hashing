@@ -42,40 +42,40 @@ main(int argc, char* argv[]) {
     }
 
     char word[64];
-    eh_hashtable_t* table = eh_create(bucket_capacity, sizeof(word), sizeof(size_t), hash_fnv1a, is_equal_str);
+    eh_hashtable_t* table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, is_equal_str);
     while (1 == fscanf(file, "%s\n", word)) {
         void* value = eh_lookup(table, word);
         if (NULL == value) {
-            eh_insert(table, word, &(size_t){1});
+            size_t init_value = 1;
+            eh_insert(table, word, &init_value);
         } else {
             ++*(size_t*)value;
         }
     }
+    eh_stat(table);
 
     size_t count = 0;
     void *key, *val;
     for (eh_iterator_t iterator = eh_iter(table); eh_next(&iterator, &key, &val);) {
+            // printf("%s\n", (char*)key);
         if (*(size_t*)val >= 1024) {
             ++count;
         }
     }
     printf("%zu words with >= 1024 repetitions\n", count);
 
-    // eh_hashtable_t* new_table = eh_create(bucket_capacity, sizeof(word), sizeof(size_t), hash_fnv1a, is_equal_str);
-    // eh_insert(new_table, "Hello", &(size_t){1});
-    // eh_insert(new_table, "World", &(size_t){2});
-    // eh_insert(new_table, "Egor", &(size_t){3});
-    // eh_insert(new_table, "Brat", &(size_t){4});
-    // eh_insert(new_table, "Tima", &(size_t){5});
+    eh_hashtable_t* new_table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, is_equal_str);
+    eh_insert(new_table, word, &(size_t){1});
 
-    // eh_erase(new_table, "Hello");
-    // eh_erase(new_table, "World");
-    // eh_erase(new_table, "Egor");
-    // eh_erase(new_table, "Brat");
-    // eh_erase(new_table, "Tima");
+    eh_erase(new_table, word);
+    printf("%s\n", word);
+    strcpy(word, "Hello");
+    eh_insert(new_table, word, &(size_t){1});
+    eh_erase(new_table, word);
+    printf("%s\n", word);
 
-    // eh_destroy(new_table);
-    // eh_destroy(table);
+    eh_destroy(new_table);
+    eh_destroy(table);
     fclose(file);
     return EXIT_SUCCESS;
 }
