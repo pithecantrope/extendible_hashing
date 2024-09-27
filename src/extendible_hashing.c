@@ -1,5 +1,4 @@
 #include "extendible_hashing.h"
-#include <stdio.h>
 
 #define FIELD_SIZEOF(type, field) (sizeof(((type*)0)->field))
 
@@ -118,13 +117,17 @@ bool
 eh_next(eh_iterator_t* iterator, void** key, void** val) {
     assert(NULL != iterator && NULL != key && NULL != val);
 
-    if (iterator->bucket_index == iterator->table->bucket_count) {
-        return false;
-    }
-    struct bucket* bucket = iterator->table->buckets[iterator->bucket_index];
+    struct bucket* bucket;
+    do { // Skip empty buckets
+        if (iterator->bucket_index == iterator->table->bucket_count) {
+            return false;
+        }
+
+        bucket = iterator->table->buckets[iterator->bucket_index];
+    } while (0 == bucket->item_count && ++iterator->bucket_index);
+
     *key = key_ptr(iterator->table, bucket, iterator->item_index);
     *val = val_ptr(iterator->table, bucket, iterator->item_index);
-
     ++iterator->item_index;
 
     if (iterator->item_index == bucket->item_count) {
@@ -161,10 +164,11 @@ split(eh_hashtable_t* table, const void* key, struct bucket* bucket) {
     uint16_t old_item_count = bucket->item_count;
     bucket->item_count = 0;
 
-    for (uint16_t i = 0; i < old_item_count; ++i) { // Rehash:
+    for (uint16_t i = 0; i < old_item_count; ++i) { // Rehash
         void* k = key_ptr(table, bucket, i);
         void* v = val_ptr(table, bucket, i);
         struct bucket* target = table->hash(k, table->key_size) & high_bit ? new_bucket : bucket;
+
         memcpy(key_ptr(table, target, target->item_count), k, table->key_size);
         memcpy(val_ptr(table, target, target->item_count), v, table->val_size);
         ++target->item_count;
@@ -181,10 +185,9 @@ split(eh_hashtable_t* table, const void* key, struct bucket* bucket) {
     table->buckets[table->bucket_count] = new_bucket;
     ++table->bucket_count;
 
-    if (bucket->item_count == 0) {
+    if (0 == bucket->item_count) {
         split(table, key, new_bucket);
-    }
-    if (new_bucket->item_count == 0) {
+    } else if (0 == new_bucket->item_count) {
         split(table, key, bucket);
     }
 }
@@ -244,11 +247,4 @@ eh_erase(eh_hashtable_t* table, const void* key) {
             return;
         }
     }
-}
-
-void
-eh_stat(const eh_hashtable_t* table) {
-    printf("bucket_capacity: %hu bucket_count: %u dir_count: %zu depth_global: %hhu key_size:  %zu value_size: %zu\n",
-           table->bucket_capacity, table->bucket_count, table->dir_count, table->depth_global, table->key_size,
-           table->val_size);
 }

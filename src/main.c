@@ -1,9 +1,5 @@
 #include <inttypes.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include "extendible_hashing.h"
 
 #define FNV_OFFSET 14695981039346656037ULL
@@ -44,37 +40,24 @@ main(int argc, char* argv[]) {
     char word[64];
     eh_hashtable_t* table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, is_equal_str);
     while (1 == fscanf(file, "%s\n", word)) {
+        const size_t init_value = 1;
         void* value = eh_lookup(table, word);
         if (NULL == value) {
-            size_t init_value = 1;
             eh_insert(table, word, &init_value);
         } else {
             ++*(size_t*)value;
         }
     }
-    eh_stat(table);
 
     size_t count = 0;
     void *key, *val;
     for (eh_iterator_t iterator = eh_iter(table); eh_next(&iterator, &key, &val);) {
-            // printf("%s\n", (char*)key);
         if (*(size_t*)val >= 1024) {
             ++count;
         }
     }
     printf("%zu words with >= 1024 repetitions\n", count);
 
-    eh_hashtable_t* new_table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, is_equal_str);
-    eh_insert(new_table, word, &(size_t){1});
-
-    eh_erase(new_table, word);
-    printf("%s\n", word);
-    strcpy(word, "Hello");
-    eh_insert(new_table, word, &(size_t){1});
-    eh_erase(new_table, word);
-    printf("%s\n", word);
-
-    eh_destroy(new_table);
     eh_destroy(table);
     fclose(file);
     return EXIT_SUCCESS;
