@@ -3,12 +3,16 @@
 #define FIELD_SIZEOF(type, field) (sizeof(((type*)0)->field))
 
 struct bucket {
+    void* items;
     uint16_t item_count;
     uint8_t depth_local;
-    void* items;
-};
+} __attribute__((packed));
 
 struct extendible_hashing_hashtable {
+    struct bucket** buckets;
+    struct bucket** dirs;
+    size_t dir_count;
+
     size_t key_size;
     size_t val_size;
     uint64_t (*hash)(const void*, size_t);
@@ -17,9 +21,6 @@ struct extendible_hashing_hashtable {
     uint32_t bucket_count;
     uint16_t bucket_capacity;
     uint8_t depth_global;
-    struct bucket** buckets;
-    size_t dir_count;
-    struct bucket** dirs;
 };
 
 static_assert(FIELD_SIZEOF(struct bucket, item_count)
@@ -43,6 +44,10 @@ eh_create(size_t key_size, size_t val_size, uint16_t bucket_capacity, uint64_t (
     const uint32_t init_bucket_count = 1 << init_depth_global;
 
     *table = (eh_hashtable_t){
+        .buckets = malloc(init_bucket_count * sizeof(struct bucket*)),
+        .dirs = malloc(init_bucket_count * sizeof(struct bucket*)),
+        .dir_count = init_bucket_count,
+
         .key_size = key_size,
         .val_size = val_size,
         .hash = hash,
@@ -51,9 +56,6 @@ eh_create(size_t key_size, size_t val_size, uint16_t bucket_capacity, uint64_t (
         .bucket_count = init_bucket_count,
         .bucket_capacity = bucket_capacity,
         .depth_global = init_depth_global,
-        .buckets = malloc(init_bucket_count * sizeof(struct bucket*)),
-        .dir_count = init_bucket_count,
-        .dirs = malloc(init_bucket_count * sizeof(struct bucket*)),
     };
     assert(NULL != table->buckets && NULL != table->dirs);
 
@@ -62,9 +64,9 @@ eh_create(size_t key_size, size_t val_size, uint16_t bucket_capacity, uint64_t (
         assert(NULL != table->buckets[i]);
 
         *table->buckets[i] = (struct bucket){
+            .items = malloc(bucket_capacity * (key_size + val_size)),
             .item_count = 0,
             .depth_local = init_depth_global,
-            .items = malloc(bucket_capacity * (key_size + val_size)),
         };
         assert(NULL != table->buckets[i]->items);
 
@@ -153,9 +155,9 @@ split(eh_hashtable_t* table, const void* key, struct bucket* bucket) {
     struct bucket* new_bucket = malloc(sizeof(struct bucket));
     assert(NULL != new_bucket);
     *new_bucket = (struct bucket){
+        .items = malloc(table->bucket_capacity * (table->key_size + table->val_size)),
         .item_count = 0,
         .depth_local = 1 + bucket->depth_local,
-        .items = malloc(table->bucket_capacity * (table->key_size + table->val_size)),
     };
     assert(NULL != new_bucket->items);
 
