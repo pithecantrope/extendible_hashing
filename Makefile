@@ -3,10 +3,10 @@ BUILD_DIR := ./build
 SRC_DIR := ./src
 
 CC := gcc
-# CFLAGS := -O0 -ggdb -fsanitize=address,undefined -Werror -Wall -Wextra -std=c17
-CFLAGS := -O3
 LDFLAGS :=
-# LDFLAGS += -lasan -lubsan
+# CFLAGS := -O3 -flto=auto
+CFLAGS := -O0 -ggdb3 -fsanitize=address,undefined -Werror -Wall -Wextra -Wfloat-equal -Wundef -Wshadow -Wlogical-op -Wswitch-default -Wswitch-enum -Wconversion -Winline -Wdouble-promotion -pedantic-errors -std=c17
+LDFLAGS += -lasan -lubsan
 CPPFLAGS := -MMD -MP
 
 SRCS := $(wildcard $(SRC_DIR)/*.c)
@@ -18,7 +18,7 @@ DEPS := $(OBJS:.o=.d)
 all: $(BUILD_DIR)/$(TARGET_EXEC)
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	@$(CC) $^ -o $@ $(LDFLAGS)
+	@$(CC) $^ -o $@ $(CFLAGS) $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)

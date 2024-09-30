@@ -39,8 +39,8 @@ main(int argc, char* argv[]) {
 
     char word[64];
     eh_hashtable_t* table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, is_equal_str);
+    const size_t init_value = 1;
     while (1 == fscanf(file, "%s\n", word)) {
-        const size_t init_value = 1;
         void* value = eh_lookup(table, word);
         if (NULL == value) {
             eh_insert(table, word, &init_value);
@@ -50,7 +50,7 @@ main(int argc, char* argv[]) {
     }
 
     size_t count = 0;
-    void *key, *val;
+    const void *key, *val;
     for (eh_iterator_t iterator = eh_iter(table); eh_next(&iterator, &key, &val);) {
         if (*(size_t*)val >= 1024) {
             ++count;
