@@ -1,31 +1,28 @@
-#include <inttypes.h>
 #include <stdio.h>
 #include "extendible_hashing.h"
 
 #define FNV_OFFSET 14695981039346656037ULL
 #define FNV_PRIME  1099511628211ULL
 
-uint64_t
-hash_fnv1a(const void* key, size_t key_size) {
-    (void)key_size;
-    uint64_t hash = FNV_OFFSET;
+size_t
+hash_fnv1a(const void* key) {
+    size_t hash = FNV_OFFSET;
     for (const char* p = key; *p; p++) {
-        hash ^= (uint64_t)*p;
+        hash ^= (size_t)*p;
         hash *= FNV_PRIME;
     }
     return hash;
 }
 
-bool
-is_equal_str(const void* key1, const void* key2, size_t key_size) {
-    (void)key_size;
-    return 0 == strcmp(key1, key2);
+int
+cmp(const void* key1, const void* key2) {
+    return strcmp(key1, key2);
 }
 
 int
 main(int argc, char* argv[]) {
-    uint16_t bucket_capacity;
-    if (2 != argc || 1 != sscanf(argv[1], "%" SCNu16, &bucket_capacity)) {
+    unsigned int bucket_capacity;
+    if (2 != argc || 1 != sscanf(argv[1], "%u", &bucket_capacity)) {
         fprintf(stderr, "Usage: %s <bucket_capacity>\n", *argv);
         return EXIT_FAILURE;
     }
@@ -38,7 +35,7 @@ main(int argc, char* argv[]) {
     }
 
     char word[64];
-    eh_hashtable_t* table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, is_equal_str);
+    eh_hashtable_t* table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, cmp);
     const size_t init_value = 1;
     while (1 == fscanf(file, "%s\n", word)) {
         void* value = eh_lookup(table, word);
