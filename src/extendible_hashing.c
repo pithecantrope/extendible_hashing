@@ -154,7 +154,7 @@ split(eh_hashtable_t* const table, const void* const key, struct bucket* const b
     }
 }
 
-static struct bucket*
+static inline struct bucket*
 bucket_ptr(const eh_hashtable_t* const table, const void* const key) {
     return table->dirs[table->hash(key) & (((size_t)1 << table->depth_global) - 1)];
 }

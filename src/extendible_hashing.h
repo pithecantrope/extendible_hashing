@@ -16,7 +16,7 @@ void eh_erase(eh_hashtable_t* table, const void* key);
 void* eh_lookup(const eh_hashtable_t* table, const void* key);
 
 typedef struct {
-    const eh_hashtable_t* const table;
+    const eh_hashtable_t* table;
     size_t bucket_index;
     unsigned int item_index;
 } eh_iterator_t;

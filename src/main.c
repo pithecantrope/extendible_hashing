@@ -22,14 +22,14 @@ cmp(const void* key1, const void* key2) {
 int
 main(int argc, char* argv[]) {
     unsigned int bucket_capacity;
-    if (2 != argc || 1 != sscanf(argv[1], "%u", &bucket_capacity)) {
+    if (argc != 2 || sscanf(argv[1], "%u", &bucket_capacity) != 1) {
         fprintf(stderr, "Usage: %s <bucket_capacity>\n", *argv);
         return EXIT_FAILURE;
     }
 
     const char path[] = "res/data.txt";
     FILE* file = fopen(path, "rt");
-    if (NULL == file) {
+    if (file == NULL) {
         fprintf(stderr, "Could not open %s for reading\n", path);
         return EXIT_FAILURE;
     }
@@ -37,7 +37,7 @@ main(int argc, char* argv[]) {
     char word[64];
     eh_hashtable_t* table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, cmp);
     const size_t init_value = 1;
-    while (1 == fscanf(file, "%s\n", word)) {
+    while (fscanf(file, "%s\n", word) == 1) {
         void* value = eh_lookup(table, word);
         if (NULL == value) {
             eh_insert(table, word, &init_value);
