@@ -103,7 +103,7 @@ eh_next(eh_iterator_t* const iterator, const void** const key, const void** cons
 }
 
 static void
-split(eh_hashtable_t* const table, const void* const key, struct bucket* const bucket) {
+split(eh_hashtable_t* const table, size_t const hash, struct bucket* const bucket) {
     if (bucket->depth_local == table->depth_global) { // Expansion
         assert(table->depth_global != 8 * sizeof(table->dir_count) && "Increase bucket_capacity");
         table->dirs = realloc(table->dirs, 2 * table->dir_count * sizeof(struct bucket*));
@@ -136,7 +136,7 @@ split(eh_hashtable_t* const table, const void* const key, struct bucket* const b
         ++target->item_count;
     }
 
-    for (size_t i = table->hash(key) & (high_bit - 1); i < table->dir_count; i += high_bit) {
+    for (size_t i = hash & (high_bit - 1); i < table->dir_count; i += high_bit) {
         table->dirs[i] = i & high_bit ? new_bucket : bucket;
     }
 
@@ -148,22 +148,23 @@ split(eh_hashtable_t* const table, const void* const key, struct bucket* const b
     ++table->bucket_count;
 
     if (0 == bucket->item_count) {
-        split(table, key, new_bucket);
+        split(table, hash, new_bucket);
     } else if (0 == new_bucket->item_count) {
-        split(table, key, bucket);
+        split(table, hash, bucket);
     }
 }
 
 static inline struct bucket*
-bucket_ptr(const eh_hashtable_t* const table, const void* const key) {
-    return table->dirs[table->hash(key) & (((size_t)1 << table->depth_global) - 1)];
+bucket_ptr(const eh_hashtable_t* const table, size_t const hash) {
+    return table->dirs[hash & (((size_t)1 << table->depth_global) - 1)];
 }
 
 void
 eh_insert(eh_hashtable_t* const table, const void* const key, const void* const val) {
     assert(table != NULL && key != NULL && val != NULL);
 
-    struct bucket* const bucket = bucket_ptr(table, key);
+    const size_t hash = table->hash(key);
+    struct bucket* const bucket = bucket_ptr(table, hash);
     for (unsigned int i = 0; i < bucket->item_count; ++i) {
         if (table->cmp(key_ptr(table, bucket, i), key) == 0) {
             memcpy(val_ptr(table, bucket, i), val, table->val_size);
@@ -178,14 +179,14 @@ eh_insert(eh_hashtable_t* const table, const void* const key, const void* const 
         return; // Insert
     }
 
-    split(table, key, bucket);
+    split(table, hash, bucket);
 }
 
 void*
 eh_lookup(const eh_hashtable_t* const table, const void* const key) {
     assert(table != NULL && key != NULL);
 
-    const struct bucket* const bucket = bucket_ptr(table, key);
+    const struct bucket* const bucket = bucket_ptr(table, table->hash(key));
     for (unsigned int i = 0; i < bucket->item_count; ++i) {
         if (table->cmp(key_ptr(table, bucket, i), key) == 0) {
             return val_ptr(table, bucket, i);
@@ -198,7 +199,7 @@ void
 eh_erase(eh_hashtable_t* const table, const void* const key) {
     assert(table != NULL && key != NULL);
 
-    struct bucket* const bucket = bucket_ptr(table, key);
+    struct bucket* const bucket = bucket_ptr(table, table->hash(key));
     for (unsigned int i = 0; i < bucket->item_count; ++i) {
         if (table->cmp(key_ptr(table, bucket, i), key) == 0) { // Shift
             memcpy(key_ptr(table, bucket, i), key_ptr(table, bucket, i + 1),
