@@ -19,7 +19,8 @@ cmp(const void* key1, const void* key2) {
     return strcmp(key1, key2);
 }
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 4096
+#define WORD_SIZE   32
 
 int
 main(int argc, char* argv[]) {
@@ -36,15 +37,14 @@ main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    char* word;
-    eh_hashtable_t* table = eh_create(32, sizeof(size_t), bucket_capacity, hash_fnv1a, cmp);
-    const size_t init_value = 1;
+    const char* word;
+    eh_hashtable_t* const table = eh_create(WORD_SIZE, sizeof(size_t), bucket_capacity, hash_fnv1a, cmp);
     char buffer[BUFFER_SIZE];
     while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
         word = strtok(buffer, "\n");
-        void* value = eh_lookup(table, word);
+        const void* const value = eh_lookup(table, word);
         if (value == NULL) {
-            eh_insert(table, word, &init_value);
+            eh_insert(table, word, &(size_t){1});
         } else {
             ++*(size_t*)value;
         }

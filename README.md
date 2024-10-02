@@ -1,4 +1,4 @@
-# 253 LoC
+# 266 LoC
 
 ## API
 
@@ -20,7 +20,7 @@
 ### Add `extendible_hashing.c` and `extendible_hashing.h` to your project's `src/` directory
 ### Include the header file
 ```c
-#include <extendible_hashing.h>
+#include "extendible_hashing.h"
 ```
 ### Example (`src/main.c`)
 ```c
@@ -45,6 +45,9 @@ cmp(const void* key1, const void* key2) {
     return strcmp(key1, key2);
 }
 
+#define BUFFER_SIZE 4096
+#define WORD_SIZE   32
+
 int
 main(int argc, char* argv[]) {
     unsigned int bucket_capacity;
@@ -60,15 +63,20 @@ main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
-    char word[64];
-    eh_hashtable_t* table = eh_create(sizeof(word), sizeof(size_t), bucket_capacity, hash_fnv1a, cmp);
-    const size_t init_value = 1;
-    while (fscanf(file, "%s\n", word) == 1) {
-        void* value = eh_lookup(table, word);
-        if (NULL == value) {
-            eh_insert(table, word, &init_value);
+    const char* word;
+    eh_hashtable_t* const table = eh_create(WORD_SIZE, sizeof(size_t), bucket_capacity, hash_fnv1a, cmp);
+    char buffer[BUFFER_SIZE];
+    while (fgets(buffer, BUFFER_SIZE, file) != NULL) {
+        word = strtok(buffer, "\n");
+        const void* const value = eh_lookup(table, word);
+        if (value == NULL) {
+            eh_insert(table, word, &(size_t){1});
         } else {
             ++*(size_t*)value;
+        }
+
+        while (word != NULL) {
+            word = strtok(NULL, "\n");
         }
     }
 
