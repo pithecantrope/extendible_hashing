@@ -11,13 +11,13 @@ struct extendible_hashing_hashtable {
     size_t bucket_count;
     struct bucket** dirs;
     size_t dir_count;
+    unsigned int bucket_capacity;
+    unsigned char depth_global;
 
     size_t key_size;
     size_t val_size;
     size_t (*hash)(const void*);
     int (*cmp)(const void*, const void*);
-    unsigned int bucket_capacity;
-    unsigned char depth_global;
 };
 
 eh_hashtable_t*
@@ -27,7 +27,7 @@ eh_create(size_t const key_size, size_t const val_size, unsigned int const bucke
 
     eh_hashtable_t* const table = malloc(sizeof(eh_hashtable_t));
     assert(table != NULL);
-    const unsigned char init_depth_global = 1;
+    const unsigned char init_depth_global = 4;
     const size_t init_bucket_count = 1 << init_depth_global;
 
     *table = (eh_hashtable_t){
@@ -35,13 +35,13 @@ eh_create(size_t const key_size, size_t const val_size, unsigned int const bucke
         .bucket_count = init_bucket_count,
         .dirs = malloc(init_bucket_count * sizeof(struct bucket*)),
         .dir_count = init_bucket_count,
+        .bucket_capacity = bucket_capacity,
+        .depth_global = init_depth_global,
 
         .key_size = key_size,
         .val_size = val_size,
         .hash = hash,
         .cmp = cmp,
-        .bucket_capacity = bucket_capacity,
-        .depth_global = init_depth_global,
     };
     assert(table->buckets != NULL && table->dirs != NULL);
 
