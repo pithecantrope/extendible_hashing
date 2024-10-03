@@ -27,16 +27,13 @@ eh_create(size_t const key_size, size_t const val_size, unsigned int const bucke
 
     eh_hashtable_t* const table = malloc(sizeof(eh_hashtable_t));
     assert(table != NULL);
-    const unsigned char init_depth_global = 4;
-    const size_t init_bucket_count = 1 << init_depth_global;
-
     *table = (eh_hashtable_t){
-        .buckets = malloc(init_bucket_count * sizeof(struct bucket*)),
-        .bucket_count = init_bucket_count,
-        .dirs = malloc(init_bucket_count * sizeof(struct bucket*)),
-        .dir_count = init_bucket_count,
+        .buckets = malloc(2 * sizeof(struct bucket*)),
+        .bucket_count = 2,
+        .dirs = malloc(2 * sizeof(struct bucket*)),
+        .dir_count = 2,
         .bucket_capacity = bucket_capacity,
-        .depth_global = init_depth_global,
+        .depth_global = 1,
 
         .key_size = key_size,
         .val_size = val_size,
@@ -45,10 +42,10 @@ eh_create(size_t const key_size, size_t const val_size, unsigned int const bucke
     };
     assert(table->buckets != NULL && table->dirs != NULL);
 
-    for (size_t i = 0; i < init_bucket_count; ++i) {
+    for (size_t i = 0; i < 2; ++i) {
         table->buckets[i] = malloc(sizeof(struct bucket) + bucket_capacity * (sizeof(size_t) + key_size + val_size));
         assert(table->buckets[i] != NULL);
-        *table->buckets[i] = (struct bucket){.depth_local = init_depth_global};
+        *table->buckets[i] = (struct bucket){.depth_local = 1};
 
         table->dirs[i] = table->buckets[i];
     }
@@ -134,10 +131,10 @@ split(eh_hashtable_t* const table, struct bucket* const bucket) {
     bucket->item_count = 0;
 
     for (unsigned int i = 0; i < old_item_count; ++i) { // Rehash
-        const size_t h = *hash_ptr(table, bucket, i);
-        struct bucket* const target = h & high_bit ? new_bucket : bucket;
+        const size_t* h = hash_ptr(table, bucket, i);
+        struct bucket* const target = *h & high_bit ? new_bucket : bucket;
 
-        memcpy(hash_ptr(table, target, target->item_count), hash_ptr(table, bucket, i),
+        memcpy(hash_ptr(table, target, target->item_count), h,
                sizeof(size_t) + table->key_size + table->val_size);
         ++target->item_count;
     }
