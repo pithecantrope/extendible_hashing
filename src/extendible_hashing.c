@@ -3,7 +3,7 @@
 struct bucket {
     unsigned char depth_local;
     unsigned int item_count;
-    void* items[]; // [hash][key][val]
+    char items[]; // [hash][key][val]
 };
 
 struct extendible_hashing_hashtable {
@@ -67,7 +67,7 @@ eh_destroy(eh_hashtable_t* const table) {
 
 static inline size_t*
 hash_ptr(const eh_hashtable_t* const table, const struct bucket* const bucket, unsigned int const i) {
-    return (size_t*)((char*)bucket->items + i * (sizeof(size_t) + table->key_size + table->val_size));
+    return (size_t*)(bucket->items + i * (sizeof(size_t) + table->key_size + table->val_size));
 }
 
 static inline void*
@@ -134,8 +134,7 @@ split(eh_hashtable_t* const table, struct bucket* const bucket) {
         const size_t* h = hash_ptr(table, bucket, i);
         struct bucket* const target = *h & high_bit ? new_bucket : bucket;
 
-        memcpy(hash_ptr(table, target, target->item_count), h,
-               sizeof(size_t) + table->key_size + table->val_size);
+        memcpy(hash_ptr(table, target, target->item_count), h, sizeof(size_t) + table->key_size + table->val_size);
         ++target->item_count;
     }
 

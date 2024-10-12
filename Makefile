@@ -4,8 +4,8 @@ SRC_DIR := ./src
 
 CC := gcc
 LDFLAGS :=
-CFLAGS := -O3 -flto=auto
-# CFLAGS := -O0 -ggdb3 -fsanitize=address,undefined -Werror -Wall -Wextra -Wfloat-equal -Wundef -Wshadow -Wlogical-op -Wswitch-default -Wswitch-enum -Wconversion -Winline -Wdouble-promotion -pedantic-errors -std=c17
+# CFLAGS := -O3 -flto=auto
+CFLAGS := -O0 -ggdb3 -fsanitize=address,undefined -Werror -Wall -Wextra -Wfloat-equal -Wundef -Wshadow -Wlogical-op -Wswitch-default -Wswitch-enum -Wconversion -Winline -Wdouble-promotion -pedantic-errors -std=c17
 # LDFLAGS += -lasan -lubsan
 CPPFLAGS := -MMD -MP
 
