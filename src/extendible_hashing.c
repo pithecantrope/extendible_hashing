@@ -7,10 +7,8 @@ struct bucket {
 };
 
 struct extendible_hashing_hashtable {
-    // TODO: remove buckets mechanic
     struct bucket** buckets;
     size_t bucket_count;
-    //
     struct bucket** dirs;
     size_t dir_count;
     unsigned int bucket_capacity;
