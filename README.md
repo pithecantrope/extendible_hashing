@@ -1,4 +1,4 @@
-# 263 LoC
+# 259 LoC
 
 ## API
 
@@ -25,6 +25,7 @@
 ### Example (`src/main.c`)
 ```c
 #include <stdio.h>
+#include <string.h>
 #include "extendible_hashing.h"
 
 #define FNV_OFFSET 14695981039346656037ULL

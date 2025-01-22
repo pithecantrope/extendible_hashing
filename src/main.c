@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "extendible_hashing.h"
 
 #define FNV_OFFSET 14695981039346656037ULL
