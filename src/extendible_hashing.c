@@ -95,26 +95,25 @@ val_ptr(const eh_hashtable_t* const table, const struct bucket* const bucket, un
 }
 
 int
-eh_next(eh_iterator_t* const iterator, const void** const key, const void** const val) {
-        assert(iterator != NULL && key != NULL && val != NULL);
+eh_next(eh_iterator_t* const it, const void** const key, const void** const val) {
+        assert(it != NULL && key != NULL && val != NULL);
 
-        const struct bucket* bucket;
-        do { // Skip empty buckets
-                if (iterator->bucket_index == iterator->table->bucket_count) {
-                        return 0;
+        while (it->bucket_index < it->table->bucket_count) {
+                const struct bucket* const bucket = it->table->buckets[it->bucket_index];
+                if (it->item_index < bucket->item_count) {
+                        *key = key_ptr(it->table, bucket, it->item_index);
+                        *val = val_ptr(it->table, bucket, it->item_index);
+                        ++it->item_index;
+
+                        if (it->item_index == bucket->item_count) {
+                                it->item_index = 0;
+                                ++it->bucket_index;
+                        }
+                        return 1;
                 }
-                bucket = iterator->table->buckets[iterator->bucket_index];
-        } while (0 == bucket->item_count && ++iterator->bucket_index);
-
-        *key = key_ptr(iterator->table, bucket, iterator->item_index);
-        *val = val_ptr(iterator->table, bucket, iterator->item_index);
-        ++iterator->item_index;
-
-        if (iterator->item_index == bucket->item_count) {
-                iterator->item_index = 0;
-                ++iterator->bucket_index;
+                ++it->bucket_index;
         }
-        return 1;
+        return 0;
 }
 
 static void
