@@ -121,8 +121,11 @@ split(eh_hashtable_t* const table, struct bucket* const bucket) {
         if (bucket->depth_local == table->depth_global) { // Expansion
                 assert(table->depth_global <= 8 * sizeof(table->dir_count)
                        && "Increase bucket_capacity");
-                table->dirs = realloc(table->dirs, 2 * table->dir_count * sizeof(struct bucket*));
-                assert(table->dirs != NULL);
+
+                struct bucket** tmp = table->dirs;
+                tmp = realloc(table->dirs, 2 * table->dir_count * sizeof(struct bucket*));
+                assert(tmp != NULL);
+                table->dirs = tmp;
 
                 for (size_t i = 0; i < table->dir_count; ++i) {
                         table->dirs[i + table->dir_count] = table->dirs[i];
@@ -155,9 +158,10 @@ split(eh_hashtable_t* const table, struct bucket* const bucket) {
         }
 
         if ((table->bucket_count & (table->bucket_count - 1)) == 0) { // Is power of 2
-                table->buckets = realloc(table->buckets,
-                                         2 * table->bucket_count * sizeof(struct bucket*));
-                assert(table->buckets != NULL);
+                struct bucket** tmp = table->buckets;
+                tmp = realloc(table->buckets, 2 * table->bucket_count * sizeof(struct bucket*));
+                assert(tmp != NULL);
+                table->buckets = tmp;
         }
         table->buckets[table->bucket_count] = new_bucket;
         ++table->bucket_count;
