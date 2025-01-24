@@ -7,6 +7,9 @@
 #define EH_HASH_T size_t
 #endif
 
+#define EH_FOREACH_ITEM(table, key, val)                                                           \
+        for (eh_iterator_t iterator = eh_iter(table); eh_next(&iterator, &key, &val);)
+
 struct extendible_hashing_hashtable;
 typedef struct extendible_hashing_hashtable eh_hashtable_t;
 

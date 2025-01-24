@@ -54,7 +54,7 @@ main(int argc, char* argv[]) {
 
         size_t count = 0;
         const void *key, *val;
-        for (eh_iterator_t iterator = eh_iter(table); eh_next(&iterator, &key, &val);) {
+        EH_FOREACH_ITEM(table, key, val) {
                 if (*(EH_HASH_T*)val >= 1024) {
                         ++count;
                 }
