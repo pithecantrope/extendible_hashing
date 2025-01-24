@@ -25,7 +25,7 @@ cmp(const void* key1, const void* key2) {
 
 int
 main(int argc, char* argv[]) {
-    unsigned int bucket_capacity;
+    unsigned bucket_capacity;
     if (argc != 2 || sscanf(argv[1], "%u", &bucket_capacity) != 1) {
         fprintf(stderr, "Usage: %s <bucket_capacity>\n", *argv);
         return EXIT_FAILURE;
