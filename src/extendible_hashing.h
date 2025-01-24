@@ -3,11 +3,15 @@
 
 #include <stdlib.h>
 
+#ifndef EH_HASH_T
+#define EH_HASH_T size_t
+#endif
+
 struct extendible_hashing_hashtable;
 typedef struct extendible_hashing_hashtable eh_hashtable_t;
 
 eh_hashtable_t* eh_create(size_t key_size, size_t value_size, unsigned bucket_capacity,
-                          size_t (*const hash)(const void*),
+                          EH_HASH_T (*const hash)(const void*),
                           int (*const cmp)(const void*, const void*));
 void eh_destroy(eh_hashtable_t* table);
 void eh_insert(eh_hashtable_t* table, const void* key, const void* value);
