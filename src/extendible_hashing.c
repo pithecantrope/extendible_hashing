@@ -27,8 +27,7 @@ struct extendible_hashing_hashtable {
 eh_hashtable_t*
 eh_create(size_t const key_size, size_t const val_size, unsigned const bucket_capacity,
           size_t (*const hash)(const void*), int (*const cmp)(const void*, const void*)) {
-        assert(key_size != 0 && val_size != 0 && bucket_capacity > 1 && hash != NULL
-               && cmp != NULL);
+        assert(key_size != 0 && val_size != 0 && bucket_capacity > 1 && hash != NULL);
 
         eh_hashtable_t* const table = malloc(sizeof(*table));
         assert(table != NULL);
@@ -179,6 +178,12 @@ bucket_ptr(const eh_hashtable_t table[static 1], size_t const hash) {
         return table->dirs[hash & (((size_t)1 << table->depth_global) - 1)];
 }
 
+static inline int
+key_cmp(const eh_hashtable_t table[static 1], const void* const key1, const void* const key2) {
+        return (table->cmp == NULL ? memcmp(key1, key2, table->key_size) : table->cmp(key1, key2))
+               == 0;
+}
+
 void
 eh_insert(eh_hashtable_t* const table, const void* const key, const void* const val) {
         assert(table != NULL && key != NULL && val != NULL);
@@ -187,7 +192,7 @@ eh_insert(eh_hashtable_t* const table, const void* const key, const void* const 
         struct bucket* const bucket = bucket_ptr(table, hash);
         for (unsigned i = 0; i < bucket->item_count; ++i) {
                 if (*hash_ptr(table, bucket, i) == hash
-                    && table->cmp(key_ptr(table, bucket, i), key) == 0) {
+                    && key_cmp(table, key_ptr(table, bucket, i), key)) {
                         memcpy(val_ptr(table, bucket, i), val, table->val_size);
                         return; // Update
                 }
@@ -212,7 +217,7 @@ eh_lookup(const eh_hashtable_t* const table, const void* const key) {
         const struct bucket* const bucket = bucket_ptr(table, hash);
         for (unsigned i = 0; i < bucket->item_count; ++i) {
                 if (*hash_ptr(table, bucket, i) == hash
-                    && table->cmp(key_ptr(table, bucket, i), key) == 0) {
+                    && key_cmp(table, key_ptr(table, bucket, i), key)) {
                         return val_ptr(table, bucket, i);
                 }
         }
@@ -227,7 +232,7 @@ eh_erase(eh_hashtable_t* const table, const void* const key) {
         struct bucket* const bucket = bucket_ptr(table, hash);
         for (unsigned i = 0; i < bucket->item_count; ++i) {
                 if (*hash_ptr(table, bucket, i) == hash
-                    && table->cmp(key_ptr(table, bucket, i), key) == 0) { // Shift
+                    && key_cmp(table, key_ptr(table, bucket, i), key)) { // Shift
                         memmove(hash_ptr(table, bucket, i),
                                 hash_ptr(table, bucket, bucket->item_count - 1), ITEM_SIZE(table));
                         --bucket->item_count;
