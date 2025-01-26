@@ -3,10 +3,12 @@
 #include <string.h>
 #include "extendible_hashing.h"
 
+typedef unsigned char byte_t;
+
 struct bucket {
-        unsigned depth_local;
+        byte_t depth_local;
         unsigned item_count;
-        char items[]; // [hash][key][val]
+        byte_t items[]; // [hash][key][val]
 };
 
 #define ITEM_SIZE(table) (sizeof(EH_HASH_T) + (table)->key_size + (table)->val_size)
@@ -16,7 +18,7 @@ struct extendible_hashing_hashtable {
         size_t bucket_count;
         struct bucket** dirs;
         size_t dir_count;
-        unsigned depth_global;
+        byte_t depth_global;
 
         unsigned bucket_capacity;
         size_t key_size;
@@ -32,8 +34,8 @@ eh_create(size_t const key_size, size_t const val_size, unsigned const bucket_ca
 
         eh_hashtable_t* const table = malloc(sizeof(*table));
         assert(table != NULL);
-        const unsigned init_depth = 1;
-        const EH_HASH_T init_count = 1 << init_depth;
+        const byte_t init_depth = 1;
+        const size_t init_count = 1 << init_depth;
         *table = (eh_hashtable_t){
                 .buckets = malloc(init_count * sizeof(*table->buckets)),
                 .bucket_count = init_count,
@@ -87,12 +89,12 @@ hash_ptr(const eh_hashtable_t table[static 1], const struct bucket* const bucket
 
 static inline void*
 key_ptr(const eh_hashtable_t table[static 1], const struct bucket* const bucket, unsigned const i) {
-        return (char*)bucket->items + i * ITEM_SIZE(table) + sizeof(EH_HASH_T);
+        return (byte_t*)bucket->items + i * ITEM_SIZE(table) + sizeof(EH_HASH_T);
 }
 
 static inline void*
 val_ptr(const eh_hashtable_t table[static 1], const struct bucket* const bucket, unsigned const i) {
-        return (char*)bucket->items + i * ITEM_SIZE(table) + sizeof(EH_HASH_T) + table->key_size;
+        return (byte_t*)bucket->items + i * ITEM_SIZE(table) + sizeof(EH_HASH_T) + table->key_size;
 }
 
 int
