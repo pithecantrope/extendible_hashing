@@ -8,7 +8,7 @@
 EH_HASH_T
 hash_fnv1a(const void* key) {
         EH_HASH_T hash = FNV_OFFSET;
-        for (const char* p = key; *p; p++) {
+        for (const char* p = key; *p; ++p) {
                 hash ^= (EH_HASH_T)*p;
                 hash *= FNV_PRIME;
         }
@@ -54,7 +54,7 @@ main(int argc, char* argv[]) {
 
         size_t count = 0;
         const void *key, *val;
-        EH_FOREACH_ITEM(table, key, val) {
+        for (eh_iterator_t iterator = eh_iter(table); eh_next(&iterator, &key, &val);) {
                 if (*(EH_HASH_T*)val >= 1024) {
                         ++count;
                 }
