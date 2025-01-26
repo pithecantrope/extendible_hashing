@@ -26,17 +26,30 @@ struct extendible_hashing_hashtable {
         int (*cmp)(const void*, const void*);
 };
 
+static inline void*
+xmalloc(size_t size) {
+        void* const ptr = malloc(size);
+        assert(ptr != NULL);
+        return ptr;
+}
+
+static inline void*
+xrealloc(void* ptr, size_t size) {
+        void* const tmp = realloc(ptr, size);
+        assert(tmp != NULL);
+        return tmp;
+}
+
 eh_hashtable_t*
 eh_create(size_t const key_size, size_t const val_size, unsigned const bucket_capacity,
           EH_HASH_T (*const hash)(const void*), int (*const cmp)(const void*, const void*)) {
         assert(key_size != 0 && val_size != 0 && bucket_capacity > 1 && hash != NULL);
 
-        eh_hashtable_t* const table = malloc(sizeof(*table));
-        assert(table != NULL);
+        eh_hashtable_t* const table = xmalloc(sizeof(*table));
         const byte_t init_depth = 1;
         const size_t init_count = 1 << init_depth;
         *table = (eh_hashtable_t){
-                .dirs = malloc(init_count * sizeof(*table->dirs)),
+                .dirs = xmalloc(init_count * sizeof(*table->dirs)),
                 .dir_count = init_count,
                 .depth_global = init_depth,
 
@@ -46,11 +59,10 @@ eh_create(size_t const key_size, size_t const val_size, unsigned const bucket_ca
                 .hash = hash,
                 .cmp = cmp,
         };
-        assert(table->dirs != NULL);
 
         for (size_t i = 0; i < init_count; ++i) {
-                table->dirs[i] = malloc(sizeof(*table->dirs) + bucket_capacity * ITEM_SIZE(table));
-                assert(table->dirs[i] != NULL);
+                table->dirs[i] = xmalloc(sizeof(*table->dirs)
+                                           + bucket_capacity * ITEM_SIZE(table));
                 *table->dirs[i] = (struct bucket){.depth_local = init_depth};
         }
 
@@ -69,8 +81,7 @@ eh_destroy(eh_hashtable_t* const table) {
         assert(table != NULL);
 
         reset_buckets(table);
-        struct bucket** const buckets = malloc(table->dir_count * sizeof(*table->dirs));
-        assert(buckets != NULL);
+        struct bucket** const buckets = xmalloc(table->dir_count * sizeof(*table->dirs));
         size_t bucket_count = 0;
 
         for (size_t i = 0; i < table->dir_count; ++i) {
@@ -140,23 +151,19 @@ split(eh_hashtable_t table[static 1], struct bucket* const bucket) {
                 assert(table->depth_global < CHAR_BIT * sizeof(table->dir_count)
                        && "Increase bucket_capacity");
 
-                struct bucket** tmp = realloc(table->dirs,
-                                              2 * table->dir_count * sizeof(table->dirs));
-                assert(tmp != NULL);
-                table->dirs = tmp;
-
+                table->dirs = xrealloc(table->dirs, 2 * table->dir_count * sizeof(table->dirs));
                 for (size_t i = 0; i < table->dir_count; ++i) {
                         table->dirs[i + table->dir_count] = table->dirs[i];
                 }
+
                 table->dir_count *= 2;
                 ++table->depth_global;
                 assert(table->depth_global < CHAR_BIT * sizeof(EH_HASH_T)
                        && "Increase EH_HASH_T byte size");
         }
 
-        struct bucket* const new_bucket = malloc(sizeof(*table->dirs)
-                                                 + table->bucket_capacity * ITEM_SIZE(table));
-        assert(new_bucket != NULL);
+        struct bucket* const new_bucket = xmalloc(sizeof(*table->dirs)
+                                                    + table->bucket_capacity * ITEM_SIZE(table));
         *new_bucket = (struct bucket){.depth_local = bucket->depth_local + 1};
 
         const EH_HASH_T high_bit = 1 << bucket->depth_local++;
