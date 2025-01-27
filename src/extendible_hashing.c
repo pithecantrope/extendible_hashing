@@ -27,17 +27,25 @@ struct extendible_hashing_hashtable {
 };
 
 static inline void*
-xmalloc(size_t size) {
+xmalloc(size_t const size) {
         void* const ptr = malloc(size);
         assert(ptr != NULL);
         return ptr;
 }
 
 static inline void*
-xrealloc(void* ptr, size_t size) {
+xrealloc(void* const ptr, size_t const size) {
         void* const tmp = realloc(ptr, size);
         assert(tmp != NULL);
         return tmp;
+}
+
+static inline struct bucket*
+create_bucket(const eh_hashtable_t* const table, byte_t const depth) {
+        struct bucket* const bucket = xmalloc(sizeof(*table->dirs)
+                                              + table->bucket_capacity * ITEM_SIZE(table));
+        *bucket = (struct bucket){.depth_local = depth};
+        return bucket;
 }
 
 eh_hashtable_t*
@@ -61,11 +69,8 @@ eh_create(size_t const key_size, size_t const val_size, unsigned const bucket_ca
         };
 
         for (size_t i = 0; i < init_count; ++i) {
-                table->dirs[i] = xmalloc(sizeof(*table->dirs)
-                                           + bucket_capacity * ITEM_SIZE(table));
-                *table->dirs[i] = (struct bucket){.depth_local = init_depth};
+                table->dirs[i] = create_bucket(table, init_depth);
         }
-
         return table;
 }
 
@@ -145,43 +150,50 @@ eh_next(eh_iterator_t* const it, const void** const key, const void** const val)
         return 0;
 }
 
-static void
-split(eh_hashtable_t table[static 1], struct bucket* const bucket) {
-        if (bucket->depth_local == table->depth_global) { // Expansion
-                assert(table->depth_global < CHAR_BIT * sizeof(table->dir_count)
-                       && "Increase bucket_capacity");
-
+static inline void
+expansion(eh_hashtable_t table[static 1], byte_t const depth) {
+        if (depth == table->depth_global) {
                 table->dirs = xrealloc(table->dirs, 2 * table->dir_count * sizeof(table->dirs));
                 for (size_t i = 0; i < table->dir_count; ++i) {
                         table->dirs[i + table->dir_count] = table->dirs[i];
                 }
-
                 table->dir_count *= 2;
+
                 ++table->depth_global;
+                assert(table->depth_global < CHAR_BIT * sizeof(table->dir_count)
+                       && "Increase bucket_capacity");
                 assert(table->depth_global < CHAR_BIT * sizeof(EH_HASH_T)
                        && "Increase EH_HASH_T byte size");
         }
+}
 
-        struct bucket* const new_bucket = xmalloc(sizeof(*table->dirs)
-                                                    + table->bucket_capacity * ITEM_SIZE(table));
-        *new_bucket = (struct bucket){.depth_local = bucket->depth_local + 1};
-
+static inline void
+rehash(eh_hashtable_t table[static 1], struct bucket* const bucket,
+       struct bucket* const new_bucket) {
         const EH_HASH_T high_bit = 1 << bucket->depth_local++;
         const EH_HASH_T hash = *hash_ptr(table, bucket, table->bucket_capacity - 1)
                                & (high_bit - 1);
+
         const unsigned old_item_count = bucket->item_count;
         bucket->item_count = 0;
-
-        for (unsigned i = 0; i < old_item_count; ++i) { // Rehash
+        for (unsigned i = 0; i < old_item_count; ++i) {
                 const EH_HASH_T* h = hash_ptr(table, bucket, i);
                 struct bucket* const target = (*h & high_bit) ? new_bucket : bucket;
-
                 memcpy(hash_ptr(table, target, target->item_count++), h, ITEM_SIZE(table));
         }
 
         for (EH_HASH_T i = hash; i < table->dir_count; i += high_bit) {
                 table->dirs[i] = (i & high_bit) ? new_bucket : bucket;
         }
+}
+
+static void
+split(eh_hashtable_t table[static 1], struct bucket* const bucket) {
+        expansion(table, bucket->depth_local);
+
+        struct bucket* const new_bucket = create_bucket(table, bucket->depth_local + 1);
+
+        rehash(table, bucket, new_bucket);
 
         if (bucket->item_count == 0) {
                 split(table, new_bucket);
